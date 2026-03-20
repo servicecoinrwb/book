@@ -138,6 +138,48 @@
     min-width: 60px;
     text-align: center;
   }
+  .nav-read {
+    background: none;
+    border: 1px solid rgba(212,175,55,0.35);
+    color: var(--gold);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 3px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .nav-read:hover { background: var(--gold-dim); }
+  .nav-read.speaking {
+    background: rgba(212,175,55,0.12);
+    border-color: var(--gold);
+    animation: pulse-btn 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse-btn {
+    0%,100% { box-shadow: 0 0 0 0 rgba(212,175,55,0.3); }
+    50% { box-shadow: 0 0 0 6px rgba(212,175,55,0); }
+  }
+  .speak-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--gold); display: inline-block;
+  }
+  .nav-read.speaking .speak-dot {
+    animation: blink-dot 0.8s ease-in-out infinite;
+  }
+  @keyframes blink-dot {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.6); }
+  }
+  .reading-banner {
+    position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+    background: rgba(10,10,10,0.92); border: 1px solid var(--border);
+    padding: 8px 20px; border-radius: 100px;
+    font-size: 11px; letter-spacing: 2px; color: var(--gold);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s; z-index: 999; white-space: nowrap;
+  }
+  .reading-banner.visible { opacity: 1; }
 
   /* ══════════════════════════════════
      COVER PAGE
@@ -1326,15 +1368,19 @@
       <button class="nav-btn" id="btn-prev" onclick="changePage(-1)" disabled>← PREV</button>
       <div class="nav-progress" id="progress">1 / 28</div>
       <button class="nav-btn" id="btn-next" onclick="changePage(1)">NEXT →</button>
+      <button class="nav-read" id="btn-read" onclick="toggleRead()"><span class="speak-dot"></span> READ</button>
     </div>
   </div>
 </div>
+<div class="reading-banner" id="reading-banner">🔊 Reading aloud…</div>
 
 <script>
   const total = 28;
   let current = 0;
+  let isSpeaking = false;
 
   function changePage(dir) {
+    stopRead();
     const pages = document.querySelectorAll('.page');
     pages[current].classList.remove('active');
     pages[current].classList.add('exit');
@@ -1346,10 +1392,95 @@
     document.getElementById('btn-next').disabled = current === total - 1;
   }
 
+  function getPageText() {
+    const page = document.querySelectorAll('.page')[current];
+    // Collect meaningful text in reading order, skipping decorative elements
+    const selectors = [
+      '.cover-eyebrow', '.cover-title', '.cover-sub',
+      '.sd-label', '.sd-title', '.sd-body',
+      '.ch-label', '.ch-title', '.ch-quote', '.ch-body',
+      '.stat-lbl',
+      '.reflection-label', '.reflection-q',
+      '.contents-title', '.cl-title', '.cl-sub',
+      '.closing-pre', '.closing-quote', '.closing-attr'
+    ];
+    let parts = [];
+    selectors.forEach(sel => {
+      page.querySelectorAll(sel).forEach(el => {
+        const t = el.innerText.trim();
+        if (t) parts.push(t);
+      });
+    });
+    // Deduplicate while preserving order
+    const seen = new Set();
+    return parts.filter(p => { if (seen.has(p)) return false; seen.add(p); return true; }).join('. ');
+  }
+
+  function toggleRead() {
+    if (isSpeaking) {
+      stopRead();
+    } else {
+      startRead();
+    }
+  }
+
+  function startRead() {
+    if (!window.speechSynthesis) {
+      alert('Text-to-speech is not supported in this browser. Try Chrome or Edge.');
+      return;
+    }
+    const text = getPageText();
+    if (!text) return;
+    window.speechSynthesis.cancel();
+
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = 0.92;
+    utter.pitch = 1.0;
+    utter.volume = 1;
+
+    // Prefer a good English voice
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v =>
+      v.name.includes('Google UK English Male') ||
+      v.name.includes('Google UK English Female') ||
+      v.name.includes('Daniel') ||
+      v.name.includes('Karen') ||
+      v.name.includes('Alex')
+    ) || voices.find(v => v.lang.startsWith('en'));
+    if (preferred) utter.voice = preferred;
+
+    utter.onstart = () => {
+      isSpeaking = true;
+      document.getElementById('btn-read').classList.add('speaking');
+      document.getElementById('btn-read').innerHTML = '<span class="speak-dot"></span> STOP';
+      document.getElementById('reading-banner').classList.add('visible');
+    };
+    utter.onend = () => stopRead();
+    utter.onerror = () => stopRead();
+
+    window.speechSynthesis.speak(utter);
+  }
+
+  function stopRead() {
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    isSpeaking = false;
+    const btn = document.getElementById('btn-read');
+    if (btn) {
+      btn.classList.remove('speaking');
+      btn.innerHTML = '<span class="speak-dot"></span> READ';
+    }
+    const banner = document.getElementById('reading-banner');
+    if (banner) banner.classList.remove('visible');
+  }
+
+  // Load voices (Chrome loads async)
+  window.speechSynthesis && window.speechSynthesis.addEventListener('voiceschanged', () => {});
+
   // Keyboard navigation
   document.addEventListener('keydown', e => {
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changePage(1);
     if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') changePage(-1);
+    if (e.key === ' ') { e.preventDefault(); toggleRead(); }
   });
 </script>
 </body>
