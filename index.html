@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Just Keep Winning — The Book</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --gold: #D4AF37;
+    --gold-light: #FFF1A8;
+    --gold-dim: rgba(212,175,55,0.15);
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --text: #f0ede8;
+    --muted: rgba(240,237,232,0.45);
+    --border: rgba(212,175,55,0.18);
+  }
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+  html, body {
+    height: 100%;
+    background: #000;
+    font-family: 'Montserrat', sans-serif;
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  /* ── Book shell ── */
+  .book-shell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 20px;
+  }
+
+  .book {
+    position: relative;
+    width: 680px;
+    height: 880px;
+    max-height: 95vh;
+    max-width: 95vw;
+  }
+
+  /* ── Pages ── */
+  .page {
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(60px);
+    transition: opacity 0.55s cubic-bezier(0.16,1,0.3,1), transform 0.55s cubic-bezier(0.16,1,0.3,1);
+  }
+  .page.active {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateX(0);
+  }
+  .page.exit {
+    opacity: 0;
+    transform: translateX(-60px);
+    pointer-events: none;
+  }
+
+  /* shared bg elements */
+  .page-glow {
+    position: absolute;
+    width: 480px;
+    height: 480px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(212,175,55,0.09) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    pointer-events: none;
+  }
+  .page-stripes {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(-55deg, transparent, transparent 60px, rgba(212,175,55,0.02) 60px, rgba(212,175,55,0.02) 61px);
+    pointer-events: none;
+  }
+
+  /* ── Corner ornaments ── */
+  .corner { position: absolute; width: 32px; height: 32px; border-color: var(--gold); border-style: solid; opacity: 0.4; }
+  .corner.tl { top:18px; left:18px; border-width: 1.5px 0 0 1.5px; }
+  .corner.tr { top:18px; right:18px; border-width: 1.5px 1.5px 0 0; }
+  .corner.bl { bottom:18px; left:18px; border-width: 0 0 1.5px 1.5px; }
+  .corner.br { bottom:18px; right:18px; border-width: 0 1.5px 1.5px 0; }
+
+  /* ── Top / bottom bar ── */
+  .bar { position:absolute; left:0; right:0; height:3px; background: linear-gradient(90deg, transparent, var(--gold), var(--gold-light), var(--gold), transparent); }
+  .bar.top { top:0; }
+  .bar.bot { bottom:0; }
+
+  /* ── Page number ── */
+  .page-num {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: rgba(212,175,55,0.4);
+    font-weight: 300;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    position: absolute;
+    bottom: -64px;
+    left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+  .nav-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--gold);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 3px;
+    padding: 10px 28px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .nav-btn:hover { background: var(--gold-dim); }
+  .nav-btn:disabled { opacity: 0.2; cursor: default; }
+  .nav-progress {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    min-width: 60px;
+    text-align: center;
+  }
+
+  /* ══════════════════════════════════
+     COVER PAGE
+  ══════════════════════════════════ */
+  .cover-inner {
+    position: relative; z-index: 10;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 100%;
+    text-align: center;
+    padding: 0 60px;
+  }
+  .cover-eyebrow {
+    font-size: 10px; letter-spacing: 7px; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 24px; font-weight: 300;
+  }
+  .cover-divider {
+    width: 50px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 0 auto 36px;
+  }
+  .cover-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 100px; line-height: 0.88;
+    letter-spacing: 3px; text-transform: uppercase;
+    margin-bottom: 36px;
+  }
+  .cover-title .t1 { display:block; color: var(--text); font-size: 54px; letter-spacing: 16px; }
+  .cover-title .t2 { display:block; color: var(--gold); font-size: 114px; text-shadow: 0 0 80px rgba(212,175,55,0.35); }
+  .cover-title .t3 { display:block; color: var(--text); font-size: 74px; letter-spacing: 8px; }
+  .cover-divider2 {
+    width: 100px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 0 auto 28px;
+  }
+  .cover-sub {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 17px; font-style: italic; font-weight: 300;
+    color: var(--muted); line-height: 1.7;
+  }
+  .cover-author {
+    position: absolute; bottom: 52px;
+    font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
+    color: rgba(212,175,55,0.4); font-weight: 300;
+  }
+
+  /* ══════════════════════════════════
+     CHAPTER PAGES
+  ══════════════════════════════════ */
+  .chapter-inner {
+    position: relative; z-index: 10;
+    height: 100%;
+    display: flex; flex-direction: column;
+    padding: 52px 56px 64px;
+  }
+  .ch-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 36px;
+  }
+  .ch-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 72px; line-height: 1;
+    color: rgba(212,175,55,0.12);
+    letter-spacing: 2px;
+    user-select: none;
+  }
+  .ch-label-wrap { text-align: right; }
+  .ch-label {
+    font-size: 9px; letter-spacing: 5px; text-transform: uppercase;
+    color: var(--gold); font-weight: 400;
+  }
+  .ch-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--text); margin-top: 4px;
+  }
+
+  .ch-rule { width: 100%; height: 1px; background: var(--border); margin-bottom: 32px; }
+
+  .ch-quote {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px; font-style: italic; font-weight: 300;
+    color: var(--gold); line-height: 1.5;
+    border-left: 2px solid var(--gold);
+    padding-left: 22px;
+    margin-bottom: 28px;
+  }
+
+  .ch-body {
+    font-size: 13px; font-weight: 300; line-height: 1.9;
+    color: var(--muted);
+    margin-bottom: 28px;
+    flex: 1;
+  }
+  .ch-body strong { color: var(--text); font-weight: 500; }
+
+  /* Stats row */
+  .stats-row {
+    display: flex; gap: 12px;
+    margin-bottom: 28px;
+  }
+  .stat-box {
+    flex: 1;
+    background: rgba(212,175,55,0.05);
+    border: 1px solid var(--border);
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .stat-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 30px; color: var(--gold);
+    letter-spacing: 1px;
+  }
+  .stat-lbl {
+    font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--muted); margin-top: 4px;
+  }
+
+  /* Reflection prompt */
+  .reflection {
+    background: rgba(212,175,55,0.04);
+    border: 1px solid var(--border);
+    padding: 18px 20px;
+  }
+  .reflection-label {
+    font-size: 9px; letter-spacing: 4px; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 8px; font-weight: 500;
+  }
+  .reflection-q {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px; font-style: italic;
+    color: var(--text); line-height: 1.6;
+  }
+
+  /* ── Contents page ── */
+  .contents-inner {
+    position: relative; z-index: 10;
+    height: 100%;
+    display: flex; flex-direction: column;
+    padding: 56px 60px 64px;
+  }
+  .contents-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 44px; letter-spacing: 6px; color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .contents-sub {
+    font-size: 10px; letter-spacing: 4px; color: var(--muted);
+    text-transform: uppercase; margin-bottom: 36px;
+  }
+  .contents-rule { width:100%; height:1px; background: var(--border); margin-bottom:32px; }
+  .contents-list { list-style: none; flex:1; }
+  .contents-list li {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 11px 0;
+    border-bottom: 1px solid rgba(212,175,55,0.07);
+  }
+  .cl-left { display:flex; gap: 16px; align-items: baseline; }
+  .cl-num { font-family:'Bebas Neue',sans-serif; font-size:14px; color: rgba(212,175,55,0.4); width:20px; }
+  .cl-title { font-size:13px; font-weight:500; color:var(--text); letter-spacing:0.5px; }
+  .cl-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+  .cl-dot { flex:1; border-bottom:1px dotted rgba(212,175,55,0.15); margin: 0 10px; position:relative; top:-4px; }
+  .cl-pg { font-size:11px; color:rgba(212,175,55,0.5); }
+
+  /* ── Section Divider ── */
+  .section-divider {
+    position: relative; z-index:10;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    height:100%; text-align:center;
+    padding: 60px;
+  }
+  .sd-label {
+    font-size:10px; letter-spacing:7px; text-transform:uppercase;
+    color:var(--gold); margin-bottom:24px; font-weight:300;
+  }
+  .sd-divider { width:50px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); margin:0 auto 32px; }
+  .sd-title {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:76px; line-height:0.9; letter-spacing:4px; text-transform:uppercase;
+    color:var(--text); margin-bottom:32px;
+  }
+  .sd-title span { display:block; color:var(--gold); }
+  .sd-body {
+    font-family:'Cormorant Garamond',serif;
+    font-size:18px; font-style:italic; font-weight:300;
+    color:var(--muted); line-height:1.7; max-width:420px;
+  }
+  .sd-chapters {
+    margin-top:36px;
+    display:flex; gap:10px; flex-wrap:wrap; justify-content:center;
+  }
+  .sd-chip {
+    font-size:10px; letter-spacing:2px; text-transform:uppercase;
+    border:1px solid var(--border); padding:6px 16px;
+    color:rgba(212,175,55,0.55); font-weight:400;
+  }
+
+  /* ── Investing snippet styles ── */
+  .invest-ticker-row {
+    display:flex; gap:10px; margin-bottom:20px;
+  }
+  .ticker-card {
+    flex:1; background:rgba(212,175,55,0.04); border:1px solid var(--border);
+    padding:12px 10px; text-align:center;
+  }
+  .ticker-sym { font-family:'Bebas Neue',sans-serif; font-size:20px; color:var(--gold); letter-spacing:2px; }
+  .ticker-name { font-size:9px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; margin-top:2px; }
+  .ticker-move { font-size:12px; font-weight:700; margin-top:6px; }
+  .ticker-move.up { color:#4CAF50; }
+  .ticker-move.dn { color:#ef5350; }
+
+  /* ── Closing page ── */
+  .closing-inner {
+    position: relative; z-index:10;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    height:100%; text-align:center;
+    padding: 60px;
+  }
+  .closing-pre {
+    font-size:10px; letter-spacing:6px; text-transform:uppercase;
+    color:var(--gold); margin-bottom:28px;
+  }
+  .closing-quote {
+    font-family:'Cormorant Garamond',serif;
+    font-size:38px; font-style:italic; font-weight:300;
+    color:var(--text); line-height:1.3;
+    margin-bottom:28px;
+  }
+  .closing-attr {
+    font-size:11px; letter-spacing:3px; text-transform:uppercase;
+    color:rgba(212,175,55,0.5); margin-bottom:52px;
+  }
+  .closing-seal {
+    width:96px; height:96px;
+    border:1.5px solid rgba(212,175,55,0.35);
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+  }
+  .seal-word {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:13px; letter-spacing:2px; color:rgba(212,175,55,0.6);
+    line-height:1.3;
+  }
+</style>
+</head>
+<body>
+<div class="book-shell">
+  <div class="book">
+
+    <!-- ═══ PAGE 0 — COVER ═══ -->
+    <div class="page active" id="page-0">
+      <div class="bar top"></div>
+      <div class="bar bot"></div>
+      <div class="page-glow"></div>
+      <div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="cover-inner">
+        <div class="cover-eyebrow">Mindset &nbsp;·&nbsp; Focus &nbsp;·&nbsp; Excellence</div>
+        <div class="cover-divider"></div>
+        <div class="cover-title">
+          <span class="t1">just</span>
+          <span class="t2">KEEP</span>
+          <span class="t3">WINNING</span>
+        </div>
+        <div class="cover-divider2"></div>
+        <p class="cover-sub">A guide to relentless momentum,<br>daily discipline, and the art of<br>never stopping.</p>
+        <div class="cover-author">A Winning Mindset Series</div>
+      </div>
+      <div class="page-num">— COVER —</div>
+    </div>
+
+    <!-- ═══ PAGE 1 — CONTENTS ═══ -->
+    <div class="page" id="page-1">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="contents-inner">
+        <div class="contents-title">Contents</div>
+        <div class="contents-sub">Three parts · Nineteen pages · One mission</div>
+        <div class="contents-rule"></div>
+        <ul class="contents-list">
+          <li>
+            <div class="cl-left"><span class="cl-num">01</span><div><div class="cl-title">The Winning Mindset</div><div class="cl-sub">Identity before action</div></div></div>
+            <span class="cl-dot"></span><span class="cl-pg">03</span>
+          </li>
+          <li>
+            <div class="cl-left"><span class="cl-num">02</span><div><div class="cl-title">Momentum Is Everything</div><div class="cl-sub">Why motion matters more than direction</div></div></div>
+            <span class="cl-dot"></span><span class="cl-pg">04</span>
+          </li>
+          <li>
+            <div class="cl-left"><span class="cl-num">03</span><div><div class="cl-title">The 1% Rule</div><div class="cl-sub">Small gains that compound into greatness</div></div></div>
+            <span class="cl-dot"></span><span class="cl-pg">05</span>
+          </li>
+          <li>
+            <div class="cl-left"><span class="cl-num">04</span><div><div class="cl-title">Resilience as Strategy</div><div class="cl-sub">Turning setbacks into setups</div></div></div>
+            <span class="cl-dot"></span><span class="cl-pg">06</span>
+          </li>
+          <li>
+            <div class="cl-left"><span class="cl-num">05</span><div><div class="cl-title">Discipline Over Motivation</div><div class="cl-sub">The quiet power of showing up daily</div></div></div>
+            <span class="cl-dot"></span><span class="cl-pg">07</span>
+          </li>
+          <li>
+            <div class="cl-left"><span class="cl-num">06</span><div><div class="cl-title">Vision & Execution</div><div class="cl-sub">Bridging the gap between dream and result</div></div></div>
+            <span class="cl-dot"></span><span class="cl-pg">08</span>
+          </li>
+          <li>
+            <div class="cl-left"><span class="cl-num">07</span><div><div class="cl-title">Environment Shapes Output</div><div class="cl-sub">Design the world around your goals</div></div></div>
+            <span class="cl-dot"></span><span class="cl-pg">09</span>
+          </li>
+          <li>
+            <div class="cl-left"><span class="cl-num">08</span><div><div class="cl-title">We Are Doing Great</div><div class="cl-sub">Celebrating progress on the journey</div></div></div>
+            <span class="cl-dot"></span><span class="cl-pg">10</span>
+          </li>
+          <li>
+            <div class="cl-left"><span class="cl-num">09</span><div><div class="cl-title">The Final Push</div><div class="cl-sub">Finishing what you start</div></div></div>
+            <span class="cl-dot"></span><span class="cl-pg">11</span>
+          </li>
+          <li>
+            <div class="cl-left"><span class="cl-num" style="color:rgba(212,175,55,0.25);font-size:10px;">II</span><div><div class="cl-title" style="color:var(--gold);font-size:11px;letter-spacing:2px;">BUSINESS</div></div></div>
+            <span class="cl-dot"></span><span class="cl-pg"></span>
+          </li>
+          <li>
+            <div class="cl-left"><span class="cl-num">10</span><div><div class="cl-title">Winning in Business</div><div class="cl-sub">Standards, systems & execution</div></div></div>
+            <span class="cl-dot"></span><span class="cl-pg">13</span>
+          </li>
+          <li>
+            <div class="cl-left"><span class="cl-num">11</span><div><div class="cl-title">Revenue & Growth Mindset</div><div class="cl-sub">Acquire, retain, expand</div></div></div>
+            <span class="cl-dot"></span><span class="cl-pg">14</span>
+          </li>
+          <li>
+            <div class="cl-left"><span class="cl-num">12</span><div><div class="cl-title">Leadership at the Top</div><div class="cl-sub">Vision, trust, and removing friction</div></div></div>
+            <span class="cl-dot"></span><span class="cl-pg">15</span>
+          </li>
+          <li>
+            <div class="cl-left"><span class="cl-num" style="color:rgba(212,175,55,0.25);font-size:10px;">III</span><div><div class="cl-title" style="color:var(--gold);font-size:11px;letter-spacing:2px;">INVESTING</div></div></div>
+            <span class="cl-dot"></span><span class="cl-pg"></span>
+          </li>
+          <li>
+            <div class="cl-left"><span class="cl-num">13</span><div><div class="cl-title">The Investor's Mindset</div><div class="cl-sub">Patience, discipline & time in market</div></div></div>
+            <span class="cl-dot"></span><span class="cl-pg">17</span>
+          </li>
+          <li>
+            <div class="cl-left"><span class="cl-num">14</span><div><div class="cl-title">Stocks 101 — The Snippet</div><div class="cl-sub">ETFs, DCA, compounding & more</div></div></div>
+            <span class="cl-dot"></span><span class="cl-pg">18</span>
+          </li>
+          <li>
+            <div class="cl-left"><span class="cl-num">—</span><div><div class="cl-title">Closing Declaration</div></div></div>
+            <span class="cl-dot"></span><span class="cl-pg">19</span>
+          </li>
+        </ul>
+      </div>
+      <div class="page-num">— 01 —</div>
+    </div>
+
+    <!-- ═══ PAGE 2 — CH 01 ═══ -->
+    <div class="page" id="page-2">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="chapter-inner">
+        <div class="ch-header">
+          <div class="ch-num">01</div>
+          <div class="ch-label-wrap">
+            <div class="ch-label">Chapter One</div>
+            <div class="ch-title">The Winning Mindset</div>
+          </div>
+        </div>
+        <div class="ch-rule"></div>
+        <div class="ch-quote">"You don't rise to the level of your goals — you fall to the level of your identity."</div>
+        <div class="ch-body">
+          Winning is not an event. It is a <strong>way of being</strong>. Before a single action is taken, before the first alarm is ignored or answered, the foundation of all success is already laid — in how you see yourself.<br><br>
+          Winners don't wait for conditions to be perfect. They cultivate an identity so strong, so deeply held, that <strong>action becomes automatic</strong>. This chapter is about becoming the person who simply cannot stop winning.
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-val">92%</div><div class="stat-lbl">of peak performers use identity-based goal setting</div></div>
+          <div class="stat-box"><div class="stat-val">66 Days</div><div class="stat-lbl">avg. time to form a lasting habit</div></div>
+          <div class="stat-box"><div class="stat-val">3×</div><div class="stat-lbl">more likely to succeed with a clear self-image</div></div>
+        </div>
+        <div class="reflection">
+          <div class="reflection-label">✦ Reflection Prompt</div>
+          <div class="reflection-q">Who is the version of you that already wins consistently? Write three traits that define them — and one thing you'll do today to become that person.</div>
+        </div>
+      </div>
+      <div class="page-num">— 03 —</div>
+    </div>
+
+    <!-- ═══ PAGE 3 — CH 02 ═══ -->
+    <div class="page" id="page-3">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="chapter-inner">
+        <div class="ch-header">
+          <div class="ch-num">02</div>
+          <div class="ch-label-wrap">
+            <div class="ch-label">Chapter Two</div>
+            <div class="ch-title">Momentum Is Everything</div>
+          </div>
+        </div>
+        <div class="ch-rule"></div>
+        <div class="ch-quote">"An object in motion stays in motion. Be the object."</div>
+        <div class="ch-body">
+          Momentum is the invisible currency of achievement. It costs almost nothing to maintain — but everything to restart. <strong>The single biggest mistake</strong> high-performers make is stopping when they're ahead, believing the surge will be there when they return.<br><br>
+          Guard your momentum like it's your most valuable asset. Because it is. The days you least feel like showing up are the days <strong>momentum is forged</strong>, not lost.
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-val">2×</div><div class="stat-lbl">harder to restart vs. maintaining momentum</div></div>
+          <div class="stat-box"><div class="stat-val">21 Days</div><div class="stat-lbl">to build initial momentum in a new discipline</div></div>
+          <div class="stat-box"><div class="stat-val">80%</div><div class="stat-lbl">of elite athletes cite consistency as #1 factor</div></div>
+        </div>
+        <div class="reflection">
+          <div class="reflection-label">✦ Reflection Prompt</div>
+          <div class="reflection-q">Where in your life have you let momentum die? Name one area — and write the single smallest action you can take today to reignite it.</div>
+        </div>
+      </div>
+      <div class="page-num">— 04 —</div>
+    </div>
+
+    <!-- ═══ PAGE 4 — CH 03 ═══ -->
+    <div class="page" id="page-4">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="chapter-inner">
+        <div class="ch-header">
+          <div class="ch-num">03</div>
+          <div class="ch-label-wrap">
+            <div class="ch-label">Chapter Three</div>
+            <div class="ch-title">The 1% Rule</div>
+          </div>
+        </div>
+        <div class="ch-rule"></div>
+        <div class="ch-quote">"You don't have to be great to start, but you have to start to be great."</div>
+        <div class="ch-body">
+          A 1% daily improvement compounds to a <strong>37× better version</strong> of yourself in one year. The math is simple; the discipline is not. The 1% rule destroys the myth of the overnight breakthrough and replaces it with something more powerful — <strong>the compounding miracle of small, consistent action</strong>.<br><br>
+          You are not behind. You are not broken. You are simply at the beginning of a compounding curve that rewards patience above all else.
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-val">37×</div><div class="stat-lbl">better after 1 year of 1% daily gains</div></div>
+          <div class="stat-box"><div class="stat-val">0.03×</div><div class="stat-lbl">worse after 1 year of 1% daily losses</div></div>
+          <div class="stat-box"><div class="stat-val">365</div><div class="stat-lbl">opportunities for 1% improvement per year</div></div>
+        </div>
+        <div class="reflection">
+          <div class="reflection-label">✦ Reflection Prompt</div>
+          <div class="reflection-q">Identify one skill you want to compound over the next 12 months. What does a 1% improvement look like this week — concretely and measurably?</div>
+        </div>
+      </div>
+      <div class="page-num">— 05 —</div>
+    </div>
+
+    <!-- ═══ PAGE 5 — CH 04 ═══ -->
+    <div class="page" id="page-5">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="chapter-inner">
+        <div class="ch-header">
+          <div class="ch-num">04</div>
+          <div class="ch-label-wrap">
+            <div class="ch-label">Chapter Four</div>
+            <div class="ch-title">Resilience as Strategy</div>
+          </div>
+        </div>
+        <div class="ch-rule"></div>
+        <div class="ch-quote">"Every setback is a setup for a comeback that is far greater than what was lost."</div>
+        <div class="ch-body">
+          Most people treat resilience as a coping mechanism — something to survive failure with. <strong>Winners treat it as a strategy</strong>. They engineer their mindset so that failure becomes data, criticism becomes fuel, and adversity becomes the very training ground that separates them from those who quit.<br><br>
+          The road to winning is not smooth. It is <strong>deliberately rough</strong> — and those who understand this truth never waste a hard moment again.
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-val">94%</div><div class="stat-lbl">of C-suite leaders report major failure before breakthrough</div></div>
+          <div class="stat-box"><div class="stat-val">3.6×</div><div class="stat-lbl">more resilient after intentional adversity training</div></div>
+          <div class="stat-box"><div class="stat-val">72hrs</div><div class="stat-lbl">avg. bounce-back window for high-resilience individuals</div></div>
+        </div>
+        <div class="reflection">
+          <div class="reflection-label">✦ Reflection Prompt</div>
+          <div class="reflection-q">Think of your last significant failure. What data did it give you? Write the single most valuable lesson it taught — and how you've applied it since.</div>
+        </div>
+      </div>
+      <div class="page-num">— 06 —</div>
+    </div>
+
+    <!-- ═══ PAGE 6 — CH 05 ═══ -->
+    <div class="page" id="page-6">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="chapter-inner">
+        <div class="ch-header">
+          <div class="ch-num">05</div>
+          <div class="ch-label-wrap">
+            <div class="ch-label">Chapter Five</div>
+            <div class="ch-title">Discipline Over Motivation</div>
+          </div>
+        </div>
+        <div class="ch-rule"></div>
+        <div class="ch-quote">"Motivation gets you started. Discipline keeps you going when motivation has long since left the building."</div>
+        <div class="ch-body">
+          Motivation is a feeling. <strong>Feelings are unreliable</strong>. Discipline is a system — and systems run regardless of how you feel at 5 AM, regardless of the weather, the setback, or the season.<br><br>
+          The highest performers in any field are not more motivated than you. They are <strong>more disciplined</strong>. They have built structures — routines, environments, commitments — that make showing up the path of least resistance. Build the system. Trust the system. Win through the system.
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-val">40%</div><div class="stat-lbl">of daily actions are habits, not conscious decisions</div></div>
+          <div class="stat-box"><div class="stat-val">5 AM</div><div class="stat-lbl">wake time of 80% of the world's most successful CEOs</div></div>
+          <div class="stat-box"><div class="stat-val">18 Min</div><div class="stat-lbl">avg. morning routine of peak performers</div></div>
+        </div>
+        <div class="reflection">
+          <div class="reflection-label">✦ Reflection Prompt</div>
+          <div class="reflection-q">Design your "non-negotiable" daily routine — the three actions you will take every single day regardless of motivation. Write them down and commit to 30 days.</div>
+        </div>
+      </div>
+      <div class="page-num">— 07 —</div>
+    </div>
+
+    <!-- ═══ PAGE 7 — CH 06 ═══ -->
+    <div class="page" id="page-7">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="chapter-inner">
+        <div class="ch-header">
+          <div class="ch-num">06</div>
+          <div class="ch-label-wrap">
+            <div class="ch-label">Chapter Six</div>
+            <div class="ch-title">Vision & Execution</div>
+          </div>
+        </div>
+        <div class="ch-rule"></div>
+        <div class="ch-quote">"A vision without execution is a daydream. Execution without vision is a nightmare."</div>
+        <div class="ch-body">
+          Vision is the destination. Execution is the vehicle. Most people have one without the other — <strong>dreamers with no plan, or doers with no direction</strong>. The winning formula requires both, working in concert, daily.<br><br>
+          Map your vision into quarterly targets, weekly commitments, and daily actions. Then execute with the same ferocity you feel when you imagine the destination. <strong>Close the gap between who you are and who you intend to become</strong> — one executed decision at a time.
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-val">42%</div><div class="stat-lbl">more likely to achieve goals when written down</div></div>
+          <div class="stat-box"><div class="stat-val">Q + W + D</div><div class="stat-lbl">Quarterly · Weekly · Daily breakdown framework</div></div>
+          <div class="stat-box"><div class="stat-val">10×</div><div class="stat-lbl">ROI on time spent planning vs. reactive work</div></div>
+        </div>
+        <div class="reflection">
+          <div class="reflection-label">✦ Reflection Prompt</div>
+          <div class="reflection-q">Write your 1-year vision in two sentences. Now break it into one thing you must accomplish this quarter. What is the single action you'll take this week toward it?</div>
+        </div>
+      </div>
+      <div class="page-num">— 08 —</div>
+    </div>
+
+    <!-- ═══ PAGE 8 — CH 07 ═══ -->
+    <div class="page" id="page-8">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="chapter-inner">
+        <div class="ch-header">
+          <div class="ch-num">07</div>
+          <div class="ch-label-wrap">
+            <div class="ch-label">Chapter Seven</div>
+            <div class="ch-title">Environment Shapes Output</div>
+          </div>
+        </div>
+        <div class="ch-rule"></div>
+        <div class="ch-quote">"You are not the sum of your willpower — you are the sum of your environment."</div>
+        <div class="ch-body">
+          The highest performers don't rely on willpower. <strong>They engineer their environment</strong> so that the right choice is always the easiest choice. Your desk, your phone, your circle, your morning — all of it sends signals that either reinforce your winning identity or erode it.<br><br>
+          Audit every room, every relationship, every digital feed. Ask: does this <strong>pull me toward my best self</strong> or away from it? Curate with ruthless intentionality.
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-val">25%</div><div class="stat-lbl">productivity gain from a decluttered workspace</div></div>
+          <div class="stat-box"><div class="stat-val">5 People</div><div class="stat-lbl">avg. of your closest circle shapes your outcomes</div></div>
+          <div class="stat-box"><div class="stat-val">2hrs</div><div class="stat-lbl">avg. time reclaimed by silencing non-essential notifications</div></div>
+        </div>
+        <div class="reflection">
+          <div class="reflection-label">✦ Reflection Prompt</div>
+          <div class="reflection-q">Name one element of your environment that is quietly working against you. What is one specific change you will make to your physical or digital space this week?</div>
+        </div>
+      </div>
+      <div class="page-num">— 09 —</div>
+    </div>
+
+    <!-- ═══ PAGE 9 — CH 08 ═══ -->
+    <div class="page" id="page-9">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="chapter-inner">
+        <div class="ch-header">
+          <div class="ch-num">08</div>
+          <div class="ch-label-wrap">
+            <div class="ch-label">Chapter Eight</div>
+            <div class="ch-title">We Are Doing Great</div>
+          </div>
+        </div>
+        <div class="ch-rule"></div>
+        <div class="ch-quote">"Celebrate the distance traveled, not just the distance remaining."</div>
+        <div class="ch-body">
+          Here is a truth most high-achievers forget: <strong>you are already doing great</strong>. The fact that you are still pushing, still reading, still seeking — that alone places you in rare company. <br><br>
+          The relentless pursuit of better can quietly become a blindness to how far you've come. Acknowledge the wins. Honor the struggle. <strong>Let yourself feel great about doing great</strong> — not as a reason to stop, but as the fuel to keep going further, longer, and with more joy than ever before.
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-val">33%</div><div class="stat-lbl">performance boost from regular progress acknowledgment</div></div>
+          <div class="stat-box"><div class="stat-val">Weekly</div><div class="stat-lbl">optimal frequency for a personal wins review</div></div>
+          <div class="stat-box"><div class="stat-val">↑ Joy</div><div class="stat-lbl">gratitude practice linked to sustained peak output</div></div>
+        </div>
+        <div class="reflection">
+          <div class="reflection-label">✦ Reflection Prompt</div>
+          <div class="reflection-q">List three genuine wins from the past 30 days — no matter how small. Now write one sentence of honest acknowledgment to yourself for each one. Mean it.</div>
+        </div>
+      </div>
+      <div class="page-num">— 10 —</div>
+    </div>
+
+    <!-- ═══ PAGE 10 — CH 09 ═══ -->
+    <div class="page" id="page-10">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="chapter-inner">
+        <div class="ch-header">
+          <div class="ch-num">09</div>
+          <div class="ch-label-wrap">
+            <div class="ch-label">Chapter Nine</div>
+            <div class="ch-title">The Final Push</div>
+          </div>
+        </div>
+        <div class="ch-rule"></div>
+        <div class="ch-quote">"Most people stop at the 9th mile of a 10-mile race. The finish line is closer than the quitting point."</div>
+        <div class="ch-body">
+          The final push is the most important moment in any endeavor — and the loneliest. The crowd has thinned. The excitement has faded. <strong>Only the committed remain</strong>. This is where champions are not born but revealed.<br><br>
+          You have done everything right to get here. Now the only question is: <strong>will you finish?</strong> The answer, if you've absorbed what's on these pages, is already yes. You just keep going. You just keep winning.
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-val">90%</div><div class="stat-lbl">of people quit before reaching their goal</div></div>
+          <div class="stat-box"><div class="stat-val">Top 10%</div><div class="stat-lbl">defined simply by not stopping when others do</div></div>
+          <div class="stat-box"><div class="stat-val">1 Step</div><div class="stat-lbl">the only distance between here and done</div></div>
+        </div>
+        <div class="reflection">
+          <div class="reflection-label">✦ Reflection Prompt</div>
+          <div class="reflection-q">What is the one goal, project, or commitment you have been closest to abandoning? Write why you started — and write your declaration to finish it.</div>
+        </div>
+      </div>
+      <div class="page-num">— 11 —</div>
+    </div>
+
+    <!-- ═══ PAGE 11 — BUSINESS SECTION DIVIDER ═══ -->
+    <div class="page" id="page-11">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="section-divider">
+        <div class="sd-label">Part II &nbsp;·&nbsp; Business</div>
+        <div class="sd-divider"></div>
+        <div class="sd-title">Build<br><span>Empires</span></div>
+        <p class="sd-body">Winning in your personal life is the foundation. Now scale it. These chapters apply the winning mindset to the ruthless, rewarding world of business.</p>
+        <div class="sd-chapters">
+          <div class="sd-chip">Ch 10 · Winning in Business</div>
+          <div class="sd-chip">Ch 11 · Revenue & Growth</div>
+          <div class="sd-chip">Ch 12 · Leadership at the Top</div>
+        </div>
+      </div>
+      <div class="page-num">— 12 —</div>
+    </div>
+
+    <!-- ═══ PAGE 12 — BUSINESS CH 10 ═══ -->
+    <div class="page" id="page-12">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="chapter-inner">
+        <div class="ch-header">
+          <div class="ch-num">10</div>
+          <div class="ch-label-wrap">
+            <div class="ch-label">Chapter Ten · Business</div>
+            <div class="ch-title">Winning in Business</div>
+          </div>
+        </div>
+        <div class="ch-rule"></div>
+        <div class="ch-quote">"Your business is a reflection of your standards. Raise the standard — the business follows."</div>
+        <div class="ch-body">
+          Every great business begins as a personal decision to refuse mediocrity. The companies that endure are not built on luck — they are built on <strong>obsessive attention to value</strong>, relentless iteration, and a culture that embodies the founder's standards at every level.<br><br>
+          Treat your business like you treat your mindset: <strong>audit it, upgrade it, protect it</strong>. Know your numbers. Know your customer. Know your edge — and sharpen it daily. The market rewards the prepared and punishes the complacent.
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-val">20%</div><div class="stat-lbl">of businesses survive past year 20 — be that 20%</div></div>
+          <div class="stat-box"><div class="stat-val">$1M</div><div class="stat-lbl">avg. revenue milestone reached in yr 3 by focused founders</div></div>
+          <div class="stat-box"><div class="stat-val">Culture</div><div class="stat-lbl">cited as #1 driver of long-term business performance</div></div>
+        </div>
+        <div class="reflection">
+          <div class="reflection-label">✦ Reflection Prompt</div>
+          <div class="reflection-q">What is your business's single greatest strength right now? And the single biggest bottleneck? Write a specific action to widen the first and remove the second.</div>
+        </div>
+      </div>
+      <div class="page-num">— 13 —</div>
+    </div>
+
+    <!-- ═══ PAGE 13 — BUSINESS CH 11 ═══ -->
+    <div class="page" id="page-13">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="chapter-inner">
+        <div class="ch-header">
+          <div class="ch-num">11</div>
+          <div class="ch-label-wrap">
+            <div class="ch-label">Chapter Eleven · Business</div>
+            <div class="ch-title">Revenue & Growth Mindset</div>
+          </div>
+        </div>
+        <div class="ch-rule"></div>
+        <div class="ch-quote">"Revenue is not the goal — it is the scorecard. Focus on delivering undeniable value and the score takes care of itself."</div>
+        <div class="ch-body">
+          Most businesses plateau because their leaders confuse activity with growth. <strong>True growth is intentional</strong> — it requires knowing exactly which lever, when pulled, multiplies output without multiplying chaos.<br><br>
+          The winning formula: <strong>acquire customers profitably, retain them obsessively, and expand them naturally</strong>. Build recurring revenue wherever possible. Systematize what works. Kill what doesn't. Then reinvest your margin into the next level of growth — faster, smarter, compounding.
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-val">5–25×</div><div class="stat-lbl">cheaper to retain a customer than acquire a new one</div></div>
+          <div class="stat-box"><div class="stat-val">ARR</div><div class="stat-lbl">Annual Recurring Revenue — the gold standard metric</div></div>
+          <div class="stat-box"><div class="stat-val">40%</div><div class="stat-lbl">rule: growth rate + profit margin should exceed 40%</div></div>
+        </div>
+        <div class="reflection">
+          <div class="reflection-label">✦ Reflection Prompt</div>
+          <div class="reflection-q">What percentage of your revenue is recurring? Write one product, offer, or subscription model you could build to increase that number starting this quarter.</div>
+        </div>
+      </div>
+      <div class="page-num">— 14 —</div>
+    </div>
+
+    <!-- ═══ PAGE 14 — BUSINESS CH 12 ═══ -->
+    <div class="page" id="page-14">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="chapter-inner">
+        <div class="ch-header">
+          <div class="ch-num">12</div>
+          <div class="ch-label-wrap">
+            <div class="ch-label">Chapter Twelve · Business</div>
+            <div class="ch-title">Leadership at the Top</div>
+          </div>
+        </div>
+        <div class="ch-rule"></div>
+        <div class="ch-quote">"The ceiling of your business is the ceiling of its leader. Grow yourself first — the organization will follow."</div>
+        <div class="ch-body">
+          Winning businesses are built by <strong>winning leaders</strong>. Leadership is not a title — it is the daily choice to take full ownership of outcomes, to develop others beyond yourself, and to make decisions that serve the long game over the comfortable short one.<br><br>
+          The best leaders do three things consistently: they <strong>cast a clear vision</strong>, <strong>build a high-trust culture</strong>, and <strong>remove friction from their team's path</strong>. Everything else is commentary. Your job as a leader is to make winning easier for everyone around you.
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-val">70%</div><div class="stat-lbl">of team engagement variance is driven by the direct manager</div></div>
+          <div class="stat-box"><div class="stat-val">Trust</div><div class="stat-lbl">highest-trust teams outperform low-trust by 286%</div></div>
+          <div class="stat-box"><div class="stat-val">2hrs/wk</div><div class="stat-lbl">avg. time elite CEOs invest in their own development</div></div>
+        </div>
+        <div class="reflection">
+          <div class="reflection-label">✦ Reflection Prompt</div>
+          <div class="reflection-q">What is the one leadership behavior you would most want your team to describe you by? Are you demonstrating it daily? Write your leadership commitment for the next 90 days.</div>
+        </div>
+      </div>
+      <div class="page-num">— 15 —</div>
+    </div>
+
+    <!-- ═══ PAGE 15 — INVESTING SECTION DIVIDER ═══ -->
+    <div class="page" id="page-15">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="section-divider">
+        <div class="sd-label">Part III &nbsp;·&nbsp; Investing</div>
+        <div class="sd-divider"></div>
+        <div class="sd-title">Make<br><span>Money Work</span></div>
+        <p class="sd-body">A winner builds wealth on two fronts — what they earn through work, and what they earn through capital. This section is your introduction to the markets.</p>
+        <div class="sd-chapters">
+          <div class="sd-chip">Ch 13 · The Investor's Mindset</div>
+          <div class="sd-chip">Ch 14 · Stocks 101</div>
+        </div>
+      </div>
+      <div class="page-num">— 16 —</div>
+    </div>
+
+    <!-- ═══ PAGE 16 — INVESTING CH 13 ═══ -->
+    <div class="page" id="page-16">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="chapter-inner">
+        <div class="ch-header">
+          <div class="ch-num">13</div>
+          <div class="ch-label-wrap">
+            <div class="ch-label">Chapter Thirteen · Investing</div>
+            <div class="ch-title">The Investor's Mindset</div>
+          </div>
+        </div>
+        <div class="ch-rule"></div>
+        <div class="ch-quote">"The stock market is a device for transferring money from the impatient to the patient." — Warren Buffett</div>
+        <div class="ch-body">
+          Investing is not gambling — it is <strong>delayed gratification at scale</strong>. The investor's mindset is identical to the winner's mindset: long-term thinking, emotional discipline, and trust in the compounding process even when short-term noise screams otherwise.<br><br>
+          The market will test you. It will drop 20%, 40%, even 50% — and in those moments, <strong>your mindset is your only edge</strong>. The investors who win are those who can hold steady when others panic, buy when others flee, and zoom out when everyone is zoomed in.
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-val">10.5%</div><div class="stat-lbl">S&P 500 avg. annual return (inflation-adjusted, long run)</div></div>
+          <div class="stat-box"><div class="stat-val">$10K</div><div class="stat-lbl">becomes ~$174K over 30 yrs at 10% annual return</div></div>
+          <div class="stat-box"><div class="stat-val">Time</div><div class="stat-lbl">in the market beats timing the market — every decade</div></div>
+        </div>
+        <div class="reflection">
+          <div class="reflection-label">✦ Reflection Prompt</div>
+          <div class="reflection-q">What is your current relationship with investing — fear, curiosity, or active participation? Write one concrete step to move one level forward this month.</div>
+        </div>
+      </div>
+      <div class="page-num">— 17 —</div>
+    </div>
+
+    <!-- ═══ PAGE 17 — INVESTING CH 14 ═══ -->
+    <div class="page" id="page-17">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="chapter-inner">
+        <div class="ch-header">
+          <div class="ch-num">14</div>
+          <div class="ch-label-wrap">
+            <div class="ch-label">Chapter Fourteen · Investing</div>
+            <div class="ch-title">Stocks 101 — The Snippet</div>
+          </div>
+        </div>
+        <div class="ch-rule"></div>
+        <div class="ch-quote">"Owning a stock is owning a piece of a real business. Never forget that."</div>
+        <div class="ch-body">
+          A <strong>stock</strong> is a fractional ownership stake in a company. When the company grows, your stake grows. Four concepts every new investor must master:
+          <br><br>
+          <strong>1. Index Funds</strong> — Buy the whole market cheaply via ETFs like SPY or VTI. Low risk, proven returns. Perfect starting point.<br>
+          <strong>2. Dollar-Cost Averaging (DCA)</strong> — Invest a fixed amount on a fixed schedule regardless of price. Removes emotion from timing.<br>
+          <strong>3. Diversification</strong> — Never concentrate all capital in one stock or sector. Spread risk across industries and geographies.<br>
+          <strong>4. Compounding</strong> — Reinvest dividends and gains. Time amplifies every dollar exponentially.
+        </div>
+        <div class="invest-ticker-row">
+          <div class="ticker-card"><div class="ticker-sym">SPY</div><div class="ticker-name">S&P 500 ETF</div><div class="ticker-move up">▲ Index Core</div></div>
+          <div class="ticker-card"><div class="ticker-sym">VTI</div><div class="ticker-name">Total Market ETF</div><div class="ticker-move up">▲ Broad Base</div></div>
+          <div class="ticker-card"><div class="ticker-sym">QQQ</div><div class="ticker-name">Nasdaq 100 ETF</div><div class="ticker-move up">▲ Tech Growth</div></div>
+          <div class="ticker-card"><div class="ticker-sym">BRK.B</div><div class="ticker-name">Berkshire Hathaway</div><div class="ticker-move up">▲ Value Play</div></div>
+        </div>
+        <div class="reflection">
+          <div class="reflection-label">✦ Reflection Prompt</div>
+          <div class="reflection-q">If you invested $200/month starting today for 20 years at a 10% avg. return, you'd have ~$152,000. What would you do differently if that money was already yours? Start now.</div>
+        </div>
+      </div>
+      <div class="page-num">— 18 —</div>
+    </div>
+
+    <!-- ═══ PAGE 18 — CLOSING ═══ -->
+    <div class="page" id="page-18">
+      <div class="bar top"></div><div class="bar bot"></div>
+      <div class="page-glow"></div><div class="page-stripes"></div>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="closing-inner">
+        <div class="closing-pre">A Declaration</div>
+        <div class="closing-quote">"We are doing great.<br>And we are just getting started."</div>
+        <div class="closing-attr">— Just Keep Winning</div>
+        <div class="closing-seal">
+          <div class="seal-word">JUST</div>
+          <div class="seal-word">KEEP</div>
+          <div class="seal-word">WINNING</div>
+        </div>
+      </div>
+      <div class="page-num">— 19 —</div>
+    </div>
+
+    <!-- ─── Navigation ─── -->
+    <div class="nav">
+      <button class="nav-btn" id="btn-prev" onclick="changePage(-1)" disabled>← PREV</button>
+      <div class="nav-progress" id="progress">1 / 19</div>
+      <button class="nav-btn" id="btn-next" onclick="changePage(1)">NEXT →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const total = 19;
+  let current = 0;
+
+  function changePage(dir) {
+    const pages = document.querySelectorAll('.page');
+    pages[current].classList.remove('active');
+    pages[current].classList.add('exit');
+    setTimeout(() => pages[current].classList.remove('exit'), 600);
+    current = Math.max(0, Math.min(total - 1, current + dir));
+    pages[current].classList.add('active');
+    document.getElementById('progress').textContent = (current + 1) + ' / ' + total;
+    document.getElementById('btn-prev').disabled = current === 0;
+    document.getElementById('btn-next').disabled = current === total - 1;
+  }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changePage(1);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') changePage(-1);
+  });
+</script>
+</body>
+</html>
